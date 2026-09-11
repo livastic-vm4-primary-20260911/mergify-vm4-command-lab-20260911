@@ -1,0 +1,24 @@
+name: VM4 Trusted Token Positive Control
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create or reuse controlled marker issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: "[vm4-security-test] trusted workflow token positive control"
+        run: |
+          existing="$(gh api "repos/${GITHUB_REPOSITORY}/issues?state=all&per_page=100" --jq '.[] | select(.title == env.TITLE) | .number' | head -n1)"
+          if [ -n "$existing" ]; then
+            echo "existing=$existing"
+            exit 0
+          fi
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/issues" \
+            -f title="$TITLE" \
+            -f body="trusted workflow_dispatch positive control; event=${GITHUB_EVENT_NAME}; ref=${GITHUB_REF}; sha=${GITHUB_SHA}" \
+            --jq '.number'
