@@ -1,0 +1,27 @@
+name: VM4 Queue Trust Probe
+on:
+  push:
+    branches:
+      - "mergify/merge-queue/**"
+permissions:
+  contents: read
+  issues: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create controlled queue-context marker issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: "[vm4-security-test] queue workflow trust probe 20260911"
+        run: |
+          echo "repo=$GITHUB_REPOSITORY event=$GITHUB_EVENT_NAME ref=$GITHUB_REF actor=$GITHUB_ACTOR sha=$GITHUB_SHA"
+          existing="$(gh api "repos/${GITHUB_REPOSITORY}/issues?state=all&per_page=100" --jq '.[] | select(.title == env.TITLE) | .number' | head -n1)"
+          if [ -n "$existing" ]; then
+            echo "existing=$existing"
+            exit 0
+          fi
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/issues" \
+            -f title="$TITLE" \
+            -f body="queue trust probe; event=${GITHUB_EVENT_NAME}; repo=${GITHUB_REPOSITORY}; ref=${GITHUB_REF}; actor=${GITHUB_ACTOR}; sha=${GITHUB_SHA}" \
+            --jq '.number'
