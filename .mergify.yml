@@ -1,0 +1,5 @@
+commands_restrictions:
+  queue:
+    conditions:
+      - sender = {{author}}
+
